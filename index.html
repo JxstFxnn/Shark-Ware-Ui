@@ -28,7 +28,7 @@ html, body{
 .menu-item{ padding:10px 20px; display:flex; justify-content:space-between;
   border-bottom:1px solid rgba(255,255,255,.08); cursor:default; background:transparent;
   transition:background .15s; color:#dcdcdc; }
-.menu-item.active{ background:rgb(0, 0, 0); color:#fff; }
+.menu-item.active{ background:#000; color:#fff; }
 .menu-item:hover:not(.active){ background:rgba(128,128,128,.2); }
 .submenu{ display:none; flex-direction:column; background:rgba(0,0,0,.45); }
 .submenu-item{ padding:8px 30px; border-bottom:1px solid rgba(255,255,255,.08); color:#bfbfbf; }
@@ -36,10 +36,26 @@ html, body{
 .submenu-item:hover:not(.active){ background:rgba(128,128,128,.2); color:#fff; }
 .menu-footer{ background:rgba(0,0,0,.85); color:#b0b0b0; font-size:11px; padding:6px 10px; display:flex; justify-content:space-between; }
 
-/* kleines Debug-Overlay oben links */
+/* Debug-Overlay */
 #dbg{ position:fixed; left:8px; top:8px; font:12px monospace; color:#0f0;
   background:rgba(0,0,0,.35); padding:6px 8px; border:1px solid rgba(0,255,0,.25);
   pointer-events:none; z-index:99999; }
+
+/* Keybind-Popup (unten mittig, gleicher Style) */
+.bind{
+  position:fixed;
+  left:50%;
+  bottom:24px;
+  transform:translateX(-50%);
+  pointer-events:none; /* keine Klicks blocken */
+  z-index:9999;
+}
+.bind .menu{ width:380px; border-color:#666; }
+.bind .menu-title{ color:#d0d0d0; }
+.bind .menu-section{ padding:12px 20px; }
+.bind .hint{ opacity:.85; margin-bottom:6px; }
+.bind .label{ font-weight:700; font-size:18px; color:#fff; }
+.bind .sub{ opacity:.75; font-size:12px; margin-top:10px; }
   </style>
 </head>
 <body>
@@ -80,6 +96,18 @@ html, body{
     </div>
   </div>
 
+  <!-- Keybind-Popup -->
+  <div class="bind" id="bindPicker" style="display:none;">
+    <div class="menu">
+      <div class="menu-title">Set keybind</div>
+      <div class="menu-section">
+        <div class="hint">Press any key…</div>
+        <div class="label" id="bindLabel">(none)</div>
+        <div class="sub">Enter to confirm · Backspace to cancel</div>
+      </div>
+    </div>
+  </div>
+
   <script>
 /* ===== Debug / Fehler ===== */
 const dbg = document.getElementById('dbg');
@@ -89,11 +117,14 @@ log('[UI] ready');
 
 /* ===== DOM refs ===== */
 const items = [...document.querySelectorAll('.menu-item')];
-const submenuItems = [...document.querySelectorAll('.submenu-item')];
+let submenuItems = [...document.querySelectorAll('.submenu-item')];
 const submenu = document.getElementById('submenu');
 const mainMenu = document.getElementById('mainMenu');
 const menuTitle = document.getElementById('menuTitle');
 const pageCounter = document.getElementById('pageCounter');
+
+const bindPicker = document.getElementById('bindPicker');
+const bindLabel  = document.getElementById('bindLabel');
 
 let index = 0, subIndex = 0;
 function updateSelection(){
@@ -105,7 +136,7 @@ function updateSubSelection(){
 }
 updateSelection();
 
-/* ===== Keyboard (fallback wenn du nicht per Lua steuerst) ===== */
+/* ===== Keyboard (fallback) ===== */
 document.addEventListener('keydown', e=>{
   const inSub = getComputedStyle(submenu).display !== 'none';
   if (!inSub){
@@ -124,9 +155,7 @@ document.addEventListener('keydown', e=>{
   }
 });
 
-/* ===== Lua → HTML Bridge (SendDuiMessage) =====
-   In Lua: SendDuiMessage(dui, '{"type":"setTitle","text":"Self"}')
-*/
+/* ===== Lua → HTML Bridge (SendDuiMessage) ===== */
 window.addEventListener('message', (ev)=>{
   const d = ev.data || {};
   try{
@@ -156,15 +185,39 @@ window.addEventListener('message', (ev)=>{
         break;
       }
       case 'setSubmenu': {
-        // d.items = ["A","B","C"] -> ersetzt Submenu
         if (Array.isArray(d.items)){
-          submenu.innerHTML = d.items.map((t,i)=>`<div class="submenu-item${i===0?' active':''}">${t} <span>></span></div>`).join('');
-          // refs aktualisieren
-          while(submenuItems.length) submenuItems.pop();
-          document.querySelectorAll('.submenu-item').forEach(el=>submenuItems.push(el));
+          submenu.innerHTML = d.items
+            .map((t,i)=>`<div class="submenu-item${i===0?' active':''}">${t} <span>></span></div>`)
+            .join('');
+          submenuItems = [...document.querySelectorAll('.submenu-item')];
           subIndex = 0;
           log('setSubmenu: '+d.items.length+' items');
         }
+        break;
+      }
+      case 'selectSub': {
+        const n = submenuItems.length;
+        if (n){
+          subIndex = Math.max(0, Math.min(n-1, Number(d.index)||0));
+          updateSubSelection();
+          log('selectSub: '+subIndex);
+        }
+        break;
+      }
+      /* === Keybind-Popup === */
+      case 'bind_show': {
+        bindPicker.style.display = 'block';
+        bindLabel.textContent = d.label || '(none)';
+        log('bind_show');
+        break;
+      }
+      case 'bind_label': {
+        bindLabel.textContent = d.label || '(none)';
+        break;
+      }
+      case 'bind_hide': {
+        bindPicker.style.display = 'none';
+        log('bind_hide');
         break;
       }
     }
