@@ -6,26 +6,22 @@
   <title>Eclipse Menu (DUI-ready)</title>
   <style>
     /* DUI/Overlay Basics */
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100vw;
-      height: 100vh;
-      background: transparent !important; /* wichtig für DUI */
-      overflow: hidden;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      color: #fff;
-      -webkit-user-select: none;
-      user-select: none;
-    }
+html, body{
+  margin:0; padding:0;
+  background:transparent;
+  overflow:hidden;
 
-    /* Overlay blockiert keine Klicks ins Spiel */
-    .overlay {
-    position: fixed;
-    top: 0;         /* statt 8vh */
-    left: 0;        /* statt 5vw */
-    pointer-events: none;
-        }
+  /* FIX: feste Canvasgröße, NICHT 100vw/100vh */
+  width:800px;       /* == WIDTH in Lua */
+  height:600px;      /* == HEIGHT in Lua */
+}
+
+.overlay{
+  position:absolute;
+  top:0; left:0;     /* kein vh/vw, kein zusätzliches Skalieren */
+  pointer-events:none;
+}
+
 
 
     .menu {
