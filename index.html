@@ -20,21 +20,21 @@ html, body{
 
 /* Menü */
 .menu { width:360px; background:rgba(0,0,0,.18); color:#fff;
-  display:flex; flex-direction:column; border:2px solid #1e5fff; box-shadow:none; }
+  display:flex; flex-direction:column; border:2px solid #666; box-shadow:none; }
 .menu-header{ padding:0; }
 .menu-header img{ width:100%; height:auto; display:block; }
-.menu-title{ background:rgba(0,0,0,.85); padding:8px 20px; font-weight:700; letter-spacing:.3px; color:#cfd8ff; }
+.menu-title{ background:rgba(0,0,0,.85); padding:8px 20px; font-weight:700; letter-spacing:.3px; color:#d0d0d0; }
 .menu-section{ background:rgba(0,0,0,.35); flex-grow:1; }
 .menu-item{ padding:10px 20px; display:flex; justify-content:space-between;
   border-bottom:1px solid rgba(255,255,255,.08); cursor:default; background:transparent;
-  transition:background .15s; color:#e6e9ff; }
-.menu-item.active{ background:rgba(30,95,255,.75); color:#fff; }
-.menu-item:hover:not(.active){ background:rgba(30,95,255,.2); }
+  transition:background .15s; color:#dcdcdc; }
+.menu-item.active{ background:rgba(128,128,128,.75); color:#fff; }
+.menu-item:hover:not(.active){ background:rgba(128,128,128,.2); }
 .submenu{ display:none; flex-direction:column; background:rgba(0,0,0,.45); }
-.submenu-item{ padding:8px 30px; border-bottom:1px solid rgba(255,255,255,.08); color:#c9c9c9; }
-.submenu-item.active{ background:rgba(30,95,255,.75); color:#fff; }
-.submenu-item:hover:not(.active){ background:rgba(30,95,255,.2); color:#fff; }
-.menu-footer{ background:rgba(0,0,0,.85); color:#b7b7b7; font-size:11px; padding:6px 10px; display:flex; justify-content:space-between; }
+.submenu-item{ padding:8px 30px; border-bottom:1px solid rgba(255,255,255,.08); color:#bfbfbf; }
+.submenu-item.active{ background:rgba(128,128,128,.75); color:#fff; }
+.submenu-item:hover:not(.active){ background:rgba(128,128,128,.2); color:#fff; }
+.menu-footer{ background:rgba(0,0,0,.85); color:#b0b0b0; font-size:11px; padding:6px 10px; display:flex; justify-content:space-between; }
 
 /* kleines Debug-Overlay oben links */
 #dbg{ position:fixed; left:8px; top:8px; font:12px monospace; color:#0f0;
