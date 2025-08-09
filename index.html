@@ -1,18 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Eclipse Menu</title>
   <style>
-    body {
+    /* WICHTIG: transparenter Hintergrund & keine Zentrier-Flexbox */
+    html, body {
       margin: 0;
+      padding: 0;
+      background: transparent;   /* <— macht das Overlay durchsichtig */
+      overflow: hidden;
+      width: 100vw;
       height: 100vh;
-      background: #111; /* fast schwarz */
-      display: flex;
-      justify-content: center;
-      align-items: center;
       font-family: 'Segoe UI', sans-serif;
       color: white;
+    }
+
+    /* Overlay-Container: frei platzierbar */
+    .overlay {
+      position: fixed;
+      top: 8vh;                  /* Position nach Wunsch ändern */
+      left: 5vw;
+      pointer-events: none;      /* UI nicht blockieren (falls gewünscht) */
     }
 
     .menu {
@@ -25,142 +35,61 @@
       border: 2px solid #888;
     }
 
-    .menu-header {
-      background: linear-gradient(135deg, #111, #555);
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .menu-header { background: linear-gradient(135deg, #111, #555); padding: 0; }
+    .menu-header img { width: 100%; height: auto; display: block; }
 
-    .menu-header img {
-      height: 32px;
-      filter: grayscale(100%);
-    }
-
-    .menu-header span {
-      font-size: 22px;
-      font-weight: bold;
-      color: white;
-    }
-
-    .menu-title {
-      background: #000;
-      padding: 8px 20px;
-      font-weight: bold;
-      color: #ddd;
-    }
-
-    .menu-section {
-      background: rgba(0, 0, 0, 0.4);
-      flex-grow: 1;
-    }
+    .menu-title { background: #000; padding: 8px 20px; font-weight: bold; color: #ddd; }
+    .menu-section { background: rgba(0,0,0,0.4); flex-grow: 1; }
 
     .menu-item {
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      border-bottom: 1px solid #222;
-      cursor: pointer;
-      background: transparent;
-      transition: background 0.2s;
-      color: #ddd;
+      padding: 10px 20px; display: flex; justify-content: space-between;
+      border-bottom: 1px solid #222; cursor: pointer; background: transparent;
+      transition: background .2s; color: #ddd;
     }
+    .menu-item.active { background: #888; color: #000; }
+    .menu-item:hover:not(.active) { background: rgba(200,200,200,0.3); }
 
-    .menu-item.active {
-      background: #888;
-      color: black;
-    }
+    .submenu { display: none; flex-direction: column; background: rgba(0,0,0,0.5); }
+    .submenu-item { padding: 8px 30px; border-bottom: 1px solid #222; color: #aaa; }
+    .submenu-item.active { background: #888; color: #000; }
+    .submenu-item:hover:not(.active) { background: rgba(200,200,200,0.3); color: #fff; }
 
-    .menu-item:hover:not(.active) {
-      background: rgba(200, 200, 200, 0.3);
-    }
-
-    .submenu {
-      display: none;
-      flex-direction: column;
-      background: rgba(0, 0, 0, 0.5);
-    }
-
-    .submenu-item {
-      padding: 8px 30px;
-      border-bottom: 1px solid #222;
-      color: #aaa;
-    }
-
-    .submenu-item.active {
-      background: #888;
-      color: black;
-    }
-
-    .submenu-item:hover:not(.active) {
-      background: rgba(200, 200, 200, 0.3);
-      color: white;
-    }
-
-    .menu-search {
-      padding: 10px 20px;
-      background: #111;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .menu-search input {
-      flex: 1;
-      padding: 5px;
-      border: none;
-      background: #222;
-      color: white;
-    }
-
-    .menu-search svg {
-      fill: white;
-      width: 18px;
-      height: 18px;
-    }
-
-    .menu-footer {
-      background: #000;
-      color: #888;
-      font-size: 11px;
-      padding: 6px 10px;
-      display: flex;
-      justify-content: space-between;
-    }
+    .menu-footer { background: #000; color: #888; font-size: 11px; padding: 6px 10px; display: flex; justify-content: space-between; }
   </style>
 </head>
 <body>
-  <div class="menu">
-    <div class="menu-header" style="padding:0;">
-      <img src="https://cdn.discordapp.com/attachments/1366488328773439551/1403426074573930546/image.png?ex=689781e2&is=68963062&hm=7c8b97b3969c6b2d10a31bb6dcec181eced4bc37967ec7a6787731d4daad0f28&" 
-           alt="Shark.Ware Banner" 
-           style="width:100%; height:auto; display:block;">
-    </div>
-    <div class="menu-title" id="menuTitle">Main menu</div>
-    <div class="menu-section" id="mainMenu">
-      <div class="menu-item">Self <span>></span></div>
-      <div class="menu-item">Server <span>></span></div>
-      <div class="menu-item">Weapon <span>></span></div>
-      <div class="menu-item">Combat <span>></span></div>
-      <div class="menu-item">Vehicle <span>></span></div>
-      <div class="menu-item">Visual <span>></span></div>
-      <div class="menu-item">Misc <span>></span></div>
-      <div class="menu-item">Settings <span>></span></div>
-      <div class="menu-item">Search <span>></span></div>
-    </div>
+  <div class="overlay">
+    <div class="menu">
+      <div class="menu-header">
+        <img src="https://cdn.discordapp.com/attachments/1366488328773439551/1403671888936435722/image.png?ex=689866d1&is=68971551&hm=2130d0d13895c96c58be0a09be70168d10fda8d9a3f7c5e10f8243ee8b34781f&" alt="Shark.Ware Banner">
+      </div>
 
-    <div class="menu-section submenu" id="submenu">
-      <div class="submenu-item">Placeholder 1 <span>></span></div>
-      <div class="submenu-item">Placeholder 2 <span>></span></div>
-      <div class="submenu-item">Placeholder 3 <span>></span></div>
-      <div class="submenu-item">Placeholder 4 <span>></span></div>
-      <div class="submenu-item">Placeholder 5 <span>></span></div>
-    </div>
+      <div class="menu-title" id="menuTitle">Main menu</div>
 
-    <div class="menu-footer">
-      <div>Build: 262119</div>
-      <div id="pageCounter">1 / 9</div>
+      <div class="menu-section" id="mainMenu">
+        <div class="menu-item">Self <span>></span></div>
+        <div class="menu-item">Server <span>></span></div>
+        <div class="menu-item">Weapon <span>></span></div>
+        <div class="menu-item">Combat <span>></span></div>
+        <div class="menu-item">Vehicle <span>></span></div>
+        <div class="menu-item">Visual <span>></span></div>
+        <div class="menu-item">Misc <span>></span></div>
+        <div class="menu-item">Settings <span>></span></div>
+        <div class="menu-item">Search <span>></span></div>
+      </div>
+
+      <div class="menu-section submenu" id="submenu">
+        <div class="submenu-item">Placeholder 1 <span>></span></div>
+        <div class="submenu-item">Placeholder 2 <span>></span></div>
+        <div class="submenu-item">Placeholder 3 <span>></span></div>
+        <div class="submenu-item">Placeholder 4 <span>></span></div>
+        <div class="submenu-item">Placeholder 5 <span>></span></div>
+      </div>
+
+      <div class="menu-footer">
+        <div>Build: 262119</div>
+        <div id="pageCounter">1 / 9</div>
+      </div>
     </div>
   </div>
 
@@ -171,55 +100,30 @@
     const mainMenu = document.getElementById('mainMenu');
     const menuTitle = document.getElementById('menuTitle');
     const pageCounter = document.getElementById('pageCounter');
-    let index = 0;
-    let subIndex = 0;
+    let index = 0, subIndex = 0;
 
     function updateSelection() {
-      items.forEach((item, i) => {
-        item.classList.remove('active');
-        if (i === index) item.classList.add('active');
-      });
-      pageCounter.innerText = `${index + 1} / ${items.length}`;
+      items.forEach((el,i)=>el.classList.toggle('active', i===index));
+      pageCounter.textContent = `${index+1} / ${items.length}`;
     }
-
     function updateSubSelection() {
-      submenuItems.forEach((item, i) => {
-        item.classList.remove('active');
-        if (i === subIndex) item.classList.add('active');
-      });
+      submenuItems.forEach((el,i)=>el.classList.toggle('active', i===subIndex));
     }
-
     updateSelection();
 
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', e => {
       if (submenu.style.display === 'none') {
-        if (e.key === 'ArrowDown') {
-          index = (index + 1) % items.length;
-          updateSelection();
-        } else if (e.key === 'ArrowUp') {
-          index = (index - 1 + items.length) % items.length;
-          updateSelection();
-        } else if (e.key === 'Enter') {
-          const selectedText = items[index].innerText.split(' ')[0];
-          menuTitle.innerText = selectedText;
-          mainMenu.style.display = 'none';
-          submenu.style.display = 'flex';
-          subIndex = 0;
-          updateSubSelection();
+        if (e.key === 'ArrowDown') { index=(index+1)%items.length; updateSelection(); }
+        else if (e.key === 'ArrowUp') { index=(index-1+items.length)%items.length; updateSelection(); }
+        else if (e.key === 'Enter') {
+          menuTitle.textContent = items[index].textContent.split(' ')[0];
+          mainMenu.style.display = 'none'; submenu.style.display = 'flex';
+          subIndex = 0; updateSubSelection();
         }
       } else {
-        if (e.key === 'Backspace') {
-          submenu.style.display = 'none';
-          mainMenu.style.display = 'block';
-          menuTitle.innerText = 'Main menu';
-          updateSelection();
-        } else if (e.key === 'ArrowDown') {
-          subIndex = (subIndex + 1) % submenuItems.length;
-          updateSubSelection();
-        } else if (e.key === 'ArrowUp') {
-          subIndex = (subIndex - 1 + submenuItems.length) % submenuItems.length;
-          updateSubSelection();
-        }
+        if (e.key === 'Backspace') { submenu.style.display='none'; mainMenu.style.display='block'; menuTitle.textContent='Main menu'; updateSelection(); }
+        else if (e.key === 'ArrowDown') { subIndex=(subIndex+1)%submenuItems.length; updateSubSelection(); }
+        else if (e.key === 'ArrowUp') { subIndex=(subIndex-1+submenuItems.length)%submenuItems.length; updateSubSelection(); }
       }
     });
   </script>
