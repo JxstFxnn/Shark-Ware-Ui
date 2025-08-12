@@ -1,113 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Shark UI</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Eclipse Menu (DUI)</title>
 <style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: transparent;
-    color: white;
-  }
-  #menu {
-    width: 360px;
-    background: rgba(0,0,0,0.18);
-    border: 2px solid #1e5fff;
-    display: flex;
-    flex-direction: column;
-  }
-  .menu-title {
-    background: rgba(0,0,0,0.85);
-    padding: 10px 20px;
-    font-weight: bold;
-  }
-  .menu-item, .submenu-item {
-    padding: 10px 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    cursor: default;
-  }
-  .active {
-    background: rgba(30,95,255,0.75);
-  }
-  .toggled::after {
-    content: " ✓";
-    color: lime;
-  }
+  html,body{margin:0;padding:0;background:transparent;overflow:hidden;width:800px;height:600px;font-family:Segoe UI,Arial,sans-serif;color:#fff;}
+  .menu{width:360px;background:rgba(0,0,0,.18);border:2px solid #1e5fff;display:flex;flex-direction:column}
+  .menu-header{padding:0}
+  .menu-header img{display:block;width:100%;height:auto}
+  .menu-title{background:rgba(0,0,0,.85);padding:10px 20px;font-weight:700}
+  .menu-section{background:rgba(0,0,0,.35);flex:1;overflow-y:auto}
+  .menu-item,.submenu-item{padding:10px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .active{background:rgba(30,95,255,.75)}
+  .toggle-badge{float:right;opacity:.9}
+  .toggle-on{color:#7CFF7C}
+  .toggle-off{color:#ffb7b7}
+  .menu-footer{background:rgba(0,0,0,.85);padding:6px 10px;font-size:11px;display:flex;justify-content:space-between}
 </style>
 </head>
 <body>
-  <div id="menu">
+  <div class="menu">
+    <div class="menu-header">
+      <!-- Dein Banner -->
+      <img src="https://cdn.discordapp.com/attachments/1366488328773439551/1403671888936435722/image.png?ex=689c5b51&is=689b09d1&hm=c4cffe6f85c76c97c9a88c6af1f4bd7f7edd66970c3e9e4d967db4d96df31d97&" alt="Banner">
+    </div>
+
     <div class="menu-title" id="menuTitle">Main menu</div>
-    <div id="mainItems"></div>
-    <div id="subMenu" style="display:none;">
+
+    <div class="menu-section" id="mainWrap">
+      <div id="mainItems"></div>
+    </div>
+
+    <div class="menu-section" id="subWrap" style="display:none;">
       <div id="subItems"></div>
+    </div>
+
+    <div class="menu-footer">
+      <span>Build: 1.1</span>
+      <span id="pageCounter">1 / 8</span>
     </div>
   </div>
 
 <script>
-let mainItems = [];
-let submenuItems = [];
-let toggleStates = {};
+let mainEls = [];          // DOM-Elemente Main
+let subEls  = [];          // DOM-Elemente Sub
+let toggleStates = {};     // Feature -> bool
+let mainIndex = 0;
+let subIndex  = 0;
 
-// HTML-seitiges Update für aktives Element
-function highlightActive(items, idx) {
-  items.forEach((el,i) => el.classList.toggle('active', i === idx));
+const menuTitle = document.getElementById('menuTitle');
+const mainWrap  = document.getElementById('mainWrap');
+const subWrap   = document.getElementById('subWrap');
+const pageCounter = document.getElementById('pageCounter');
+
+function highlight(list, idx){
+  list.forEach((el,i)=>el.classList.toggle('active', i===idx));
 }
 
-// Toggle-Anzeige updaten
-function updateToggleUI(el, state) {
-  el.classList.toggle('toggled', state);
+function renderMain(items){
+  const box = document.getElementById('mainItems');
+  box.innerHTML = '';
+  mainEls = items.map((name)=>{
+    const el = document.createElement('div');
+    el.className = 'menu-item';
+    el.textContent = name;
+    box.appendChild(el);
+    return el;
+  });
+  pageCounter.textContent = `${Math.min(mainIndex+1, items.length)} / ${items.length}`;
+  highlight(mainEls, mainIndex);
 }
 
-// DUI-Nachrichten aus Lua
-window.addEventListener('message', (event) => {
-  const d = event.data;
-  switch(d.type) {
-    case 'setTitle':
-      document.getElementById('menuTitle').textContent = d.text;
+function renderSub(items, states){
+  const box = document.getElementById('subItems');
+  box.innerHTML = '';
+  subEls = items.map((name)=>{
+    const el = document.createElement('div');
+    el.className = 'submenu-item';
+    el.dataset.feature = name;
+
+    const spanName = document.createElement('span');
+    spanName.textContent = name;
+
+    const spanState = document.createElement('span');
+    spanState.className = 'toggle-badge';
+    const on = !!(states && states[name]);
+    spanState.textContent = on ? '[ ON ]' : '[ OFF ]';
+    spanState.classList.add(on ? 'toggle-on' : 'toggle-off');
+
+    el.appendChild(spanName);
+    el.appendChild(spanState);
+    box.appendChild(el);
+    return el;
+  });
+  highlight(subEls, subIndex);
+}
+
+function updateFeatureBadge(name, state){
+  toggleStates[name] = !!state;
+  const el = subEls.find(x => x.dataset.feature === name);
+  if (!el) return;
+  const badge = el.querySelector('.toggle-badge');
+  badge.textContent = state ? '[ ON ]' : '[ OFF ]';
+  badge.classList.toggle('toggle-on', state);
+  badge.classList.toggle('toggle-off', !state);
+}
+
+/* -------- DUI Bridge (Lua -> HTML) -------- */
+window.addEventListener('message', (ev)=>{
+  const d = ev.data || {};
+  switch(d.type){
+    case 'initMain': {
+      renderMain(d.items || []);
       break;
-    case 'selectIndex':
-      highlightActive(mainItems, d.index);
+    }
+    case 'selectIndex': {
+      mainIndex = Math.max(0, Math.min(mainEls.length-1, Number(d.index)||0));
+      highlight(mainEls, mainIndex);
+      pageCounter.textContent = `${mainIndex+1} / ${mainEls.length}`;
       break;
-    case 'openSubmenu':
-      document.getElementById('subMenu').style.display = 'block';
+    }
+    case 'setTitle': {
+      menuTitle.textContent = d.text || 'Main menu';
       break;
-    case 'closeSubmenu':
-      document.getElementById('subMenu').style.display = 'none';
+    }
+    case 'openSubmenu': {
+      // exklusiv: Main ausblenden, Sub zeigen
+      mainWrap.style.display = 'none';
+      subWrap.style.display  = 'block';
       break;
-    case 'setSubmenu':
-      const subItemsDiv = document.getElementById('subItems');
-      subItemsDiv.innerHTML = '';
-      submenuItems = d.items.map((name) => {
-        const el = document.createElement('div');
-        el.className = 'submenu-item';
-        el.dataset.feature = name;
-        el.textContent = name;
-        subItemsDiv.appendChild(el);
-        return el;
-      });
+    }
+    case 'closeSubmenu': {
+      subWrap.style.display  = 'none';
+      mainWrap.style.display = 'block';
+      menuTitle.textContent  = 'Main menu';
       break;
-    case 'selectSub':
-      highlightActive(submenuItems, d.index);
+    }
+    case 'setSubmenu': {
+      // d.items: string[], d.states: { [name]: bool }
+      renderSub(d.items || [], d.states || {});
       break;
-    case 'featureState':
-      toggleStates[d.name] = !!d.state;
-      const el = submenuItems.find(x => x.dataset.feature === d.name);
-      if (el) updateToggleUI(el, !!d.state);
+    }
+    case 'selectSub': {
+      subIndex = Math.max(0, Math.min(subEls.length-1, Number(d.index)||0));
+      highlight(subEls, subIndex);
       break;
-    case 'initMain':
-      const mainDiv = document.getElementById('mainItems');
-      mainDiv.innerHTML = '';
-      mainItems = d.items.map((name) => {
-        const el = document.createElement('div');
-        el.className = 'menu-item';
-        el.textContent = name;
-        mainDiv.appendChild(el);
-        return el;
-      });
+    }
+    case 'featureState': {
+      updateFeatureBadge(String(d.name||''), !!d.state);
       break;
+    }
   }
 });
 </script>
