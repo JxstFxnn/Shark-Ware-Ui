@@ -116,6 +116,70 @@ document.addEventListener('keydown', e=>{
     }
   }
 });
+// ==== DUI Bridge: reagiert auf Lua-Nachrichten ====
+window.addEventListener('message', (ev)=>{
+  const d = ev.data || {};
+  try{
+    switch(d.type){
+      case 'setTitle': {
+        menuTitle.textContent = d.text || 'Main menu';
+        break;
+      }
+      case 'selectIndex': {
+        index = Math.max(0, Math.min(items.length-1, Number(d.index)||0));
+        updateSelection();
+        break;
+      }
+      case 'openSubmenu': {
+        const title = menuTitle.textContent;
+        mainMenu.style.display='none';
+        submenu.style.display='flex';
+        fillSubmenu(title);       // nutzt deine fillSubmenu()
+        subIndex = 0; updateSubSelection();
+        break;
+      }
+      case 'closeSubmenu': {
+        submenu.style.display='none';
+        mainMenu.style.display='block';
+        menuTitle.textContent='Main menu';
+        updateSelection();
+        break;
+      }
+      case 'setSubmenu': {
+        // falls du von Lua Items schicken willst (optional)
+        const arr = Array.isArray(d.items) ? d.items : [];
+        submenu.innerHTML = arr.map((f,i)=>
+          `<div class="submenu-item${i===0?' active':''}" data-feature="${f}">
+             <span>${f}</span>
+             <span class="toggle ${toggleStates[f] ? 'on' : ''}">[ ${toggleStates[f] ? 'ON' : 'OFF'} ]</span>
+           </div>`).join('');
+        submenuItems = [...document.querySelectorAll('.submenu-item')];
+        subIndex = 0; updateSubSelection();
+        break;
+      }
+      case 'selectSub': {
+        const n = submenuItems.length;
+        subIndex = Math.max(0, Math.min(n-1, Number(d.index)||0));
+        updateSubSelection();
+        break;
+      }
+      case 'featureState': {
+        // visuellen Toggle updaten (z.B. Godmode)
+        const name = String(d.name||'');
+        const state = !!d.state;
+        toggleStates[name] = state;
+        const el = [...submenuItems].find(x=>x.dataset.feature===name);
+        if (el) updateToggleUI(el, state);
+        break;
+      }
+      // optional: bind_show / bind_label / bind_hide, wenn du das Popup im HTML hast
+      case 'bind_show': {
+        // falls du später wieder das Picker-UI nutzt
+        break;
+      }
+    }
+  }catch(e){ console.log('[bridge err]', e); }
+});
 
 
 </script>
