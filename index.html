@@ -53,13 +53,56 @@ html, body{
     </div>
     <div class="menu-section submenu" id="submenu"></div>
     <div class="menu-footer">
-      <div>Build: 1.1</div>
+      <div>Build: 1.2</div>
       <div id="pageCounter">1 / 9</div>
     </div>
   </div>
 </div>
 
 <script>
+  window.addEventListener("message", function(event) {
+    let data = event.data;
+    if (typeof data === "string") {
+        try { data = JSON.parse(data); } catch (e) { return; }
+    }
+    if (!data.type) return;
+
+    if (data.type === "setTitle") {
+        menuTitle.textContent = data.text || "Main menu";
+    }
+    else if (data.type === "selectIndex") {
+        index = Math.max(0, Math.min(items.length - 1, Number(data.index) || 0));
+        updateSelection();
+    }
+    else if (data.type === "openSubmenu") {
+        mainMenu.style.display = "none";
+        submenu.style.display = "flex";
+    }
+    else if (data.type === "closeSubmenu") {
+        submenu.style.display = "none";
+        mainMenu.style.display = "block";
+    }
+    else if (data.type === "setSubmenu") {
+        const arr = Array.isArray(data.items) ? data.items : [];
+        submenu.innerHTML = arr.map((f, i) =>
+            `<div class="submenu-item${i===0?' active':''}" data-feature="${f}">
+                <span>${f}</span>
+                <span class="toggle ${toggleStates[f] ? 'on' : ''}">[ ${toggleStates[f] ? 'ON' : 'OFF'} ]</span>
+            </div>`
+        ).join("");
+        submenuItems = [...document.querySelectorAll(".submenu-item")];
+    }
+    else if (data.type === "selectSub") {
+        subIndex = Math.max(0, Math.min(submenuItems.length - 1, Number(data.index) || 0));
+        updateSubSelection();
+    }
+    else if (data.type === "featureState") {
+        toggleStates[data.name] = data.state;
+        const el = submenuItems.find(x => x.dataset.feature === data.name);
+        if (el) updateToggleUI(el, data.state);
+    }
+});
+
 const submenuData = {
   "Self": ["Godmode","Noclip","Freecam","Invisibility","Super Jump","Unlimited Stamina"],
   "Combat": ["Aimbot","ESP","Magic Bullet","Trigger Bot","Silent Aim","Wallbang"],
