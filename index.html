@@ -1,250 +1,221 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Eclipse Menu (Persistent + Search)</title>
-<style>
-html, body{
-  margin:0; padding:0;
-  background:transparent;
-  overflow:hidden;
-  width:800px;
-  height:600px;
-}
-.overlay{
-  position:absolute; top:0; left:0;
-  pointer-events:none;
-}
-.menu { width:360px; background:rgba(0,0,0,.18); color:#fff;
-  display:flex; flex-direction:column; border:2px solid #666; }
-.menu-header img{ width:100%; height:auto; display:block; }
-.menu-title{ background:rgba(0,0,0,.85); padding:8px 20px; font-weight:700; }
-.menu-section{ background:rgba(0,0,0,.35); flex-grow:1; overflow-y:auto; }
-.menu-item{ padding:10px 20px; display:flex; justify-content:space-between;
-  border-bottom:1px solid rgba(255,255,255,.08); cursor:default; }
-.menu-item.active{ background:#000; color:#fff; }
-.submenu{ display:none; flex-direction:column; background:rgba(0,0,0,.45); overflow-y:auto; }
-.submenu-item{ padding:10px 20px; display:flex; justify-content:space-between;
-  border-bottom:1px solid rgba(255,255,255,.08); }
-.submenu-item.active{ background:rgba(128,128,128,.75); color:#fff; }
-.toggle{ min-width:60px; text-align:center; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:2px 8px; }
-.toggle.on{ background:rgba(0,255,127,.2); border-color:rgba(0,255,127,.5); }
-.menu-footer{ background:rgba(0,0,0,.85); padding:6px 10px; font-size:11px; display:flex; justify-content:space-between; }
-.search-box{ width:100%; padding:8px; box-sizing:border-box; border:none; outline:none; }
-</style>
+    <meta charset="UTF-8">
+    <title>Shark-Ware UI</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            user-select: none;
+        }
+        #container {
+            width: 800px;
+            height: 600px;
+            background-color: #2a2a2a;
+            border: 2px solid #ff0000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #header {
+            background-color: #ff0000;
+            padding: 10px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #menu {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .menu-item {
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #3a3a3a;
+            cursor: pointer;
+        }
+        .menu-item:hover {
+            background-color: #ff0000;
+        }
+        .menu-item.selected {
+            background-color: #ff0000;
+            color: #000000;
+        }
+        .submenu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #3a3a3a;
+            cursor: pointer;
+        }
+        .submenu-item:hover {
+            background-color: #ff0000;
+        }
+        .submenu-item.selected {
+            background-color: #ff0000;
+            color: #000000;
+        }
+        .toggle-badge {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #555;
+        }
+        .toggle-badge.on {
+            background-color: #00ff00;
+        }
+        #footer {
+            background-color: #ff0000;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
-<div class="overlay">
-  <div class="menu">
-    <div class="menu-header">
-      <img src="https://cdn.discordapp.com/attachments/1366488328773439551/1403671888936435722/image.png?ex=689c5b51&is=689b09d1&hm=c4cffe6f85c76c97c9a88c6af1f4bd7f7edd66970c3e9e4d967db4d96df31d97&" alt="Banner">
+    <div id="container">
+        <div id="header">Main menu</div>
+        <div id="menu">
+            <div class="menu-item selected">Self &gt;</div>
+            <div class="menu-item">Server &gt;</div>
+            <div class="menu-item">Weapon &gt;</div>
+            <div class="menu-item">Combat &gt;</div>
+            <div class="menu-item">Vehicle &gt;</div>
+            <div class="menu-item">Visual &gt;</div>
+            <div class="menu-item">Misc &gt;</div>
+            <div class="menu-item">Settings &gt;</div>
+        </div>
+        <div id="footer">
+            <span>Build: 1.2</span>
+            <span id="page">1 / 9</span>
+        </div>
     </div>
-    <div class="menu-title" id="menuTitle">Main menu</div>
-    <div class="menu-section" id="mainMenu">
-      <div class="menu-item" data-title="Self">Self <span>></span></div>
-      <div class="menu-item" data-title="Server">Server <span>></span></div>
-      <div class="menu-item" data-title="Weapon">Weapon <span>></span></div>
-      <div class="menu-item" data-title="Combat">Combat <span>></span></div>
-      <div class="menu-item" data-title="Vehicle">Vehicle <span>></span></div>
-      <div class="menu-item" data-title="Visual">Visual <span>></span></div>
-      <div class="menu-item" data-title="Misc">Misc <span>></span></div>
-      <div class="menu-item" data-title="Settings">Settings <span>></span></div>
-    </div>
-    <div class="menu-section submenu" id="submenu"></div>
-    <div class="menu-footer">
-      <div>Build: 1.2</div>
-      <div id="pageCounter">1 / 9</div>
-    </div>
-  </div>
-</div>
 
-<script>
-function sendToggle(feature, state) {
-    fetch(`https://shark_ui/toggleFeature`, {
-        method: 'POST',
-        body: JSON.stringify({ feature, state })
-    });
-}
+    <script>
+        let currentMenu = 'main';
+        let currentIndex = 0;
+        let currentSubIndex = 0;
+        let menuItems = ['Self', 'Server', 'Weapon', 'Combat', 'Vehicle', 'Visual', 'Misc', 'Settings'];
+        let submenuItems = [];
+        let featureStates = {};
 
+        // UI rendern
+        function renderMainMenu() {
+            const menu = document.getElementById('menu');
+            menu.innerHTML = '';
+            menuItems.forEach((item, i) => {
+                const div = document.createElement('div');
+                div.className = `menu-item ${i === currentIndex ? 'selected' : ''}`;
+                div.textContent = `${item} >`;
+                menu.appendChild(div);
+            });
+            document.getElementById('page').textContent = `${currentIndex + 1} / ${menuItems.length}`;
+        }
 
+        function renderSubmenu() {
+            const menu = document.getElementById('menu');
+            menu.innerHTML = '';
+            submenuItems.forEach((item, i) => {
+                const div = document.createElement('div');
+                div.className = `submenu-item ${i === currentSubIndex ? 'selected' : ''}`;
+                const text = document.createElement('span');
+                text.textContent = item;
+                div.appendChild(text);
+                if (featureType[item] === 'toggle') {
+                    const badge = document.createElement('div');
+                    badge.className = `toggle-badge ${featureStates[item] ? 'on' : ''}`;
+                    div.appendChild(badge);
+                }
+                menu.appendChild(div);
+            });
+            document.getElementById('page').textContent = `${currentSubIndex + 1} / ${submenuItems.length}`;
+        }
 
+        // Lua-Nachrichten empfangen
+        window.addEventListener('message', (event) => {
+            const data = event.data;
+            switch (data.type) {
+                case 'initMain':
+                    menuItems = data.items;
+                    currentMenu = 'main';
+                    renderMainMenu();
+                    break;
+                case 'setTitle':
+                    document.getElementById('header').textContent = data.text;
+                    break;
+                case 'selectIndex':
+                    currentIndex = data.index;
+                    renderMainMenu();
+                    break;
+                case 'openSubmenu':
+                    currentMenu = 'submenu';
+                    currentSubIndex = 0;
+                    renderSubmenu();
+                    break;
+                case 'closeSubmenu':
+                    currentMenu = 'main';
+                    renderMainMenu();
+                    break;
+                case 'selectSub':
+                    currentSubIndex = data.index;
+                    renderSubmenu();
+                    break;
+                case 'setSubmenu':
+                    submenuItems = data.items;
+                    featureStates = data.states || {};
+                    renderSubmenu();
+                    break;
+                case 'featureState':
+                    featureStates[data.name] = data.state;
+                    if (currentMenu === 'submenu') {
+                        renderSubmenu(); // Sofortiges Update bei State-Änderung
+                    }
+                    break;
+            }
+        });
 
-window.addEventListener("message", function(event) {
-    let data = event.data;
-    if (typeof data === "string") {
-        try { data = JSON.parse(data); } catch (e) { return; }
-    }
-    if (!data.type) return;
+        // Feature-Typen aus Lua synchronisieren (für Toggle vs. Button Logik)
+        const featureType = {
+            Godmode: "toggle",
+            Noclip: "toggle",
+            Freecam: "toggle",
+            Invisibility: "toggle",
+            ["Super Jump"]: "toggle",
+            ["Unlimited Stamina"]: "toggle",
+            Players: "button",
+            ["Kick Menu"]: "button",
+            Announce: "button",
+            ["Give Weapon"]: "button",
+            ["Infinite Ammo"]: "toggle",
+            ["Rapid Fire"]: "toggle",
+            ESP: "toggle",
+            ["Name Tags"]: "toggle",
+            Crosshair: "toggle",
+            Tracer: "toggle",
+            ["Spawn Vehicle"]: "button",
+            Repair: "button",
+            Flip: "button",
+            ["Film Grain"]: "toggle",
+            Bloom: "toggle",
+            Outline: "toggle",
+            ["Debug Mode"]: "toggle",
+            ["Teleport to Marker"]: "button",
+            ["Theme Color"]: "button",
+            ["Accent Color"]: "button",
+            ["UI Size"]: "button",
+            ["Reset to Default"]: "button",
+            ["Keybind Picker"]: "button",
+        };
 
-    if (data.type === "setTitle") {
-        menuTitle.textContent = data.text || "Main menu";
-    }
-    else if (data.type === "selectIndex") {
-        index = Math.max(0, Math.min(items.length - 1, Number(data.index) || 0));
-        updateSelection();
-    }
-    else if (data.type === "openSubmenu") {
-        mainMenu.style.display = "none";
-        submenu.style.display = "flex";
-    }
-    else if (data.type === "closeSubmenu") {
-        submenu.style.display = "none";
-        mainMenu.style.display = "block";
-    }
-    else if (data.type === "setSubmenu") {
-        const arr = Array.isArray(data.items) ? data.items : [];
-        submenu.innerHTML = arr.map((f, i) =>
-            `<div class="submenu-item${i===0?' active':''}" data-feature="${f}">
-                <span>${f}</span>
-                <span class="toggle ${toggleStates[f] ? 'on' : ''}">[ ${toggleStates[f] ? 'ON' : 'OFF'} ]</span>
-            </div>`
-        ).join("");
-        submenuItems = [...document.querySelectorAll(".submenu-item")];
-    }
-    else if (data.type === "selectSub") {
-        subIndex = Math.max(0, Math.min(submenuItems.length - 1, Number(data.index) || 0));
-        updateSubSelection();
-    }
-    else if (data.type === "featureState") {
-        toggleStates[data.name] = data.state;
-        const el = submenuItems.find(x => x.dataset.feature === data.name);
-        if (el) updateToggleUI(el, data.state);
-    }
-});
-
-const submenuData = {
-  "Self": ["Godmode","Noclip","Freecam","Invisibility","Super Jump","Unlimited Stamina"],
-  "Combat": ["Aimbot","ESP","Magic Bullet","Trigger Bot","Silent Aim","Wallbang"],
-  "Weapon": ["Give Weapon","Infinite Ammo","Rapid Fire","No Recoil","Explosive Bullets"],
-  "Misc": ["TX Exploit","Speedboost","Debug Mode","Teleport to Marker","Weather Control"],
-  "Settings": ["Change Theme Color","Change Accent Color","UI Size","Reset to Default","Toggle Keybind Picker"]
-};
-const allFeatures = Object.values(submenuData).flat();
-const toggleStates = {};
-allFeatures.forEach(f => toggleStates[f] = false);
-
-const items = [...document.querySelectorAll('.menu-item')];
-const submenu = document.getElementById('submenu');
-let submenuItems = [];
-const menuTitle = document.getElementById('menuTitle');
-const mainMenu = document.getElementById('mainMenu');
-const pageCounter = document.getElementById('pageCounter');
-let index = 0, subIndex = 0;
-
-function updateSelection(){
-  items.forEach((el,i)=>el.classList.toggle('active', i===index));
-  pageCounter.textContent = `${index+1} / ${items.length}`;
-}
-function updateSubSelection(){
-  submenuItems.forEach((el,i)=>el.classList.toggle('active', i===subIndex));
-}
-updateSelection();
-
-document.addEventListener('keydown', e=>{
-  const inSub = getComputedStyle(submenu).display !== 'none';
-  if (!inSub){
-    if (e.key==='ArrowDown'){ index=(index+1)%items.length; updateSelection(); }
-    else if (e.key==='ArrowUp'){ index=(index-1+items.length)%items.length; updateSelection(); }
-    else if (e.key==='Enter'){
-      const title = items[index].dataset.title;
-      menuTitle.textContent = title;
-      mainMenu.style.display='none';
-      submenu.style.display='flex';
-      fillSubmenu(title);
-      subIndex=0; updateSubSelection();
-    }
-  } else {
-    if (e.key==='Backspace'){
-      submenu.style.display='none'; mainMenu.style.display='block';
-      menuTitle.textContent='Main menu'; updateSelection();
-    }
-    else if (e.key==='ArrowDown'){ subIndex=(subIndex+1)%submenuItems.length; updateSubSelection(); }
-    else if (e.key==='ArrowUp'){ subIndex=(subIndex-1+submenuItems.length)%submenuItems.length; updateSubSelection(); }
-else if (e.key==='Enter'){
-    const el = submenuItems[subIndex];
-    const feature = el.dataset.feature;
-    toggleStates[feature] = !toggleStates[feature];
-    updateToggleUI(el, toggleStates[feature]);
-
-    // An Lua senden
-    sendToggle(feature, toggleStates[feature]);
-      }
-  }
-});
-// ==== DUI Bridge: reagiert auf Lua-Nachrichten ====
-window.addEventListener('message', (ev)=>{
-  const d = ev.data || {};
-  try{
-    switch(d.type){
-      case 'setTitle': {
-        menuTitle.textContent = d.text || 'Main menu';
-        break;
-      }
-      case 'selectIndex': {
-        index = Math.max(0, Math.min(items.length-1, Number(d.index)||0));
-        updateSelection();
-        break;
-      }
-      case 'openSubmenu': {
-        const title = menuTitle.textContent;
-        mainMenu.style.display='none';
-        submenu.style.display='flex';
-        fillSubmenu(title);       // nutzt deine fillSubmenu()
-        subIndex = 0; updateSubSelection();
-        break;
-      }
-      case 'closeSubmenu': {
-        submenu.style.display='none';
-        mainMenu.style.display='block';
-        menuTitle.textContent='Main menu';
-        updateSelection();
-        break;
-      }
-      case 'setSubmenu': {
-        // falls du von Lua Items schicken willst (optional)
-        const arr = Array.isArray(d.items) ? d.items : [];
-        submenu.innerHTML = arr.map((f,i)=>
-          `<div class="submenu-item${i===0?' active':''}" data-feature="${f}">
-             <span>${f}</span>
-             <span class="toggle ${toggleStates[f] ? 'on' : ''}">[ ${toggleStates[f] ? 'ON' : 'OFF'} ]</span>
-           </div>`).join('');
-        submenuItems = [...document.querySelectorAll('.submenu-item')];
-        subIndex = 0; updateSubSelection();
-        break;
-      }
-      case 'selectSub': {
-        const n = submenuItems.length;
-        subIndex = Math.max(0, Math.min(n-1, Number(d.index)||0));
-        updateSubSelection();
-        break;
-      }
-      case 'featureState': {
-        // visuellen Toggle updaten (z.B. Godmode)
-        const name = String(d.name||'');
-        const state = !!d.state;
-        toggleStates[name] = state;
-        const el = [...submenuItems].find(x=>x.dataset.feature===name);
-        if (el) updateToggleUI(el, state);
-        break;
-      }
-      // optional: bind_show / bind_label / bind_hide, wenn du das Popup im HTML hast
-      case 'bind_show': {
-        // falls du später wieder das Picker-UI nutzt
-        break;
-      }
-    }
-  }catch(e){ console.log('[bridge err]', e); }
-});
-
-// Senden an Lua
-function sendToggle(feature, state) {
-    fetch(`https://shark_ui/toggleFeature`, {
-        method: 'POST',
-        body: JSON.stringify({ feature, state })
-    });
-}
-
-</script>
+        // Initiales Rendering
+        renderMainMenu();
+    </script>
 </body>
 </html>
