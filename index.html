@@ -56,18 +56,31 @@
     let currentItems = [];
     let selectedIndex = 0;
 
-    function renderItems(items) {
+    function renderItems(items, states) {
       const container = document.getElementById("items");
       container.innerHTML = "";
+
       items.forEach((item, i) => {
+        // akzeptiere String ("Godmode") oder Objekt ({name:"Godmode", type:"toggle", state:true})
+        let name, type, state;
+        if (typeof item === "string") {
+          name = item;
+          type = (states && states[item] !== undefined) ? "toggle" : "button";
+          state = states ? !!states[item] : false;
+        } else {
+          name = item.name;
+          type = item.type;
+          state = item.state;
+        }
+
         const div = document.createElement("div");
         div.className = "item" + (i === selectedIndex ? " selected" : "");
-        div.dataset.feature = item.name;
-        div.innerHTML = `<span>${item.name}</span>`;
+        div.dataset.feature = name;
+        div.innerHTML = `<span>${name}</span>`;
 
-        if (item.type === "toggle") {
+        if (type === "toggle") {
           const toggle = document.createElement("div");
-          toggle.className = "toggle" + (item.state ? " active" : "");
+          toggle.className = "toggle" + (state ? " active" : "");
           div.appendChild(toggle);
         } else {
           const point = document.createElement("div");
@@ -77,6 +90,7 @@
 
         container.appendChild(div);
       });
+
       currentItems = items;
     }
 
@@ -87,7 +101,7 @@
           break;
 
         case "setSubmenu":
-          renderItems(event.data.items);
+          renderItems(event.data.items, event.data.states);
           break;
 
         case "featureState":
