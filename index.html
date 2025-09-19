@@ -118,7 +118,10 @@ updateSelection();
 
 function updateToggleUI(el, state) {
   const input = el.querySelector("input[type=checkbox]");
-  if (input) input.checked = state;
+  if (input) {
+    input.checked = state;
+  }
+  toggleStates[el.dataset.feature] = state;
 }
 
 function sendToggle(feature, state) {
