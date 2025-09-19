@@ -3,156 +3,248 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Eclipse Menu (DUI)</title>
+<title>Eclipse Menu (Persistent + Search)</title>
 <style>
-  html,body{margin:0;padding:0;background:transparent;overflow:hidden;width:800px;height:600px;font-family:Segoe UI,Arial,sans-serif;color:#fff;}
-  .menu{width:360px;background:rgba(0,0,0,.18);border:2px solid #1e5fff;display:flex;flex-direction:column}
-  .menu-header{padding:0}
-  .menu-header img{display:block;width:100%;height:auto}
-  .menu-title{background:rgba(0,0,0,.85);padding:10px 20px;font-weight:700}
-  .menu-section{background:rgba(0,0,0,.35);flex:1;overflow-y:auto}
-  .menu-item,.submenu-item{padding:10px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
-  .active{background:rgba(30,95,255,.75)}
-  .toggle-badge{float:right;opacity:.9}
-  .toggle-on{color:#7CFF7C}
-  .toggle-off{color:#ffb7b7}
-  .menu-footer{background:rgba(0,0,0,.85);padding:6px 10px;font-size:11px;display:flex;justify-content:space-between}
+html, body{
+  margin:0; padding:0;
+  background:transparent;
+  overflow:hidden;
+  width:800px;
+  height:600px;
+}
+.overlay{
+  position:absolute; top:0; left:0;
+  pointer-events:none;
+}
+.menu { width:360px; background:rgba(0,0,0,.18); color:#fff;
+  display:flex; flex-direction:column; border:2px solid #666; }
+.menu-header img{ width:100%; height:auto; display:block; }
+.menu-title{ background:rgba(0,0,0,.85); padding:8px 20px; font-weight:700; }
+.menu-section{ background:rgba(0,0,0,.35); flex-grow:1; overflow-y:auto; }
+.menu-item{ padding:10px 20px; display:flex; justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.08); cursor:default; }
+.menu-item.active{ background:#000; color:#fff; }
+.submenu{ display:none; flex-direction:column; background:rgba(0,0,0,.45); overflow-y:auto; }
+.submenu-item{ padding:10px 20px; display:flex; justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.08); }
+.submenu-item.active{ background:rgba(128,128,128,.75); color:#fff; }
+.toggle{ min-width:60px; text-align:center; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:2px 8px; }
+.toggle.on{ background:rgba(0,255,127,.2); border-color:rgba(0,255,127,.5); }
+.menu-footer{ background:rgba(0,0,0,.85); padding:6px 10px; font-size:11px; display:flex; justify-content:space-between; }
+.search-box{ width:100%; padding:8px; box-sizing:border-box; border:none; outline:none; }
 </style>
 </head>
 <body>
+<div class="overlay">
   <div class="menu">
     <div class="menu-header">
-      <!-- Dein Banner -->
       <img src="https://cdn.discordapp.com/attachments/1366488328773439551/1403671888936435722/image.png?ex=689c5b51&is=689b09d1&hm=c4cffe6f85c76c97c9a88c6af1f4bd7f7edd66970c3e9e4d967db4d96df31d97&" alt="Banner">
     </div>
-
     <div class="menu-title" id="menuTitle">Main menu</div>
-
-    <div class="menu-section" id="mainWrap">
-      <div id="mainItems"></div>
+    <div class="menu-section" id="mainMenu">
+      <div class="menu-item" data-title="Self">Self <span>></span></div>
+      <div class="menu-item" data-title="Server">Server <span>></span></div>
+      <div class="menu-item" data-title="Weapon">Weapon <span>></span></div>
+      <div class="menu-item" data-title="Combat">Combat <span>></span></div>
+      <div class="menu-item" data-title="Vehicle">Vehicle <span>></span></div>
+      <div class="menu-item" data-title="Visual">Visual <span>></span></div>
+      <div class="menu-item" data-title="Misc">Misc <span>></span></div>
+      <div class="menu-item" data-title="Settings">Settings <span>></span></div>
     </div>
-
-    <div class="menu-section" id="subWrap" style="display:none;">
-      <div id="subItems"></div>
-    </div>
-
+    <div class="menu-section submenu" id="submenu"></div>
     <div class="menu-footer">
-      <span>Build: 1.1</span>
-      <span id="pageCounter">1 / 8</span>
+      <div>Build: 1.2</div>
+      <div id="pageCounter">1 / 9</div>
     </div>
   </div>
+</div>
 
 <script>
-let mainEls = [];          // DOM-Elemente Main
-let subEls  = [];          // DOM-Elemente Sub
-let toggleStates = {};     // Feature -> bool
-let mainIndex = 0;
-let subIndex  = 0;
+function sendToggle(feature, state) {
+    fetch(`https://shark_ui/toggleFeature`, {
+        method: 'POST',
+        body: JSON.stringify({ feature, state })
+    });
+}
 
+
+
+
+window.addEventListener("message", function(event) {
+    let data = event.data;
+    if (typeof data === "string") {
+        try { data = JSON.parse(data); } catch (e) { return; }
+    }
+    if (!data.type) return;
+
+    if (data.type === "setTitle") {
+        menuTitle.textContent = data.text || "Main menu";
+    }
+    else if (data.type === "selectIndex") {
+        index = Math.max(0, Math.min(items.length - 1, Number(data.index) || 0));
+        updateSelection();
+    }
+    else if (data.type === "openSubmenu") {
+        mainMenu.style.display = "none";
+        submenu.style.display = "flex";
+    }
+    else if (data.type === "closeSubmenu") {
+        submenu.style.display = "none";
+        mainMenu.style.display = "block";
+    }
+    else if (data.type === "setSubmenu") {
+        const arr = Array.isArray(data.items) ? data.items : [];
+        submenu.innerHTML = arr.map((f, i) =>
+            `<div class="submenu-item${i===0?' active':''}" data-feature="${f}">
+                <span>${f}</span>
+                <span class="toggle ${toggleStates[f] ? 'on' : ''}">[ ${toggleStates[f] ? 'ON' : 'OFF'} ]</span>
+            </div>`
+        ).join("");
+        submenuItems = [...document.querySelectorAll(".submenu-item")];
+    }
+    else if (data.type === "selectSub") {
+        subIndex = Math.max(0, Math.min(submenuItems.length - 1, Number(data.index) || 0));
+        updateSubSelection();
+    }
+    else if (data.type === "featureState") {
+        toggleStates[data.name] = data.state;
+        const el = submenuItems.find(x => x.dataset.feature === data.name);
+        if (el) updateToggleUI(el, data.state);
+    }
+});
+
+const submenuData = {
+  "Self": ["Godmode","Noclip","Freecam","Invisibility","Super Jump","Unlimited Stamina"],
+  "Combat": ["Aimbot","ESP","Magic Bullet","Trigger Bot","Silent Aim","Wallbang"],
+  "Weapon": ["Give Weapon","Infinite Ammo","Rapid Fire","No Recoil","Explosive Bullets"],
+  "Misc": ["TX Exploit","Speedboost","Debug Mode","Teleport to Marker","Weather Control"],
+  "Settings": ["Change Theme Color","Change Accent Color","UI Size","Reset to Default","Toggle Keybind Picker"]
+};
+const allFeatures = Object.values(submenuData).flat();
+const toggleStates = {};
+allFeatures.forEach(f => toggleStates[f] = false);
+
+const items = [...document.querySelectorAll('.menu-item')];
+const submenu = document.getElementById('submenu');
+let submenuItems = [];
 const menuTitle = document.getElementById('menuTitle');
-const mainWrap  = document.getElementById('mainWrap');
-const subWrap   = document.getElementById('subWrap');
+const mainMenu = document.getElementById('mainMenu');
 const pageCounter = document.getElementById('pageCounter');
+let index = 0, subIndex = 0;
 
-function highlight(list, idx){
-  list.forEach((el,i)=>el.classList.toggle('active', i===idx));
+function updateSelection(){
+  items.forEach((el,i)=>el.classList.toggle('active', i===index));
+  pageCounter.textContent = `${index+1} / ${items.length}`;
 }
-
-function renderMain(items){
-  const box = document.getElementById('mainItems');
-  box.innerHTML = '';
-  mainEls = items.map((name)=>{
-    const el = document.createElement('div');
-    el.className = 'menu-item';
-    el.textContent = name;
-    box.appendChild(el);
-    return el;
-  });
-  pageCounter.textContent = `${Math.min(mainIndex+1, items.length)} / ${items.length}`;
-  highlight(mainEls, mainIndex);
+function updateSubSelection(){
+  submenuItems.forEach((el,i)=>el.classList.toggle('active', i===subIndex));
 }
+updateSelection();
 
-function renderSub(items, states){
-  const box = document.getElementById('subItems');
-  box.innerHTML = '';
-  subEls = items.map((name)=>{
-    const el = document.createElement('div');
-    el.className = 'submenu-item';
-    el.dataset.feature = name;
+document.addEventListener('keydown', e=>{
+  const inSub = getComputedStyle(submenu).display !== 'none';
+  if (!inSub){
+    if (e.key==='ArrowDown'){ index=(index+1)%items.length; updateSelection(); }
+    else if (e.key==='ArrowUp'){ index=(index-1+items.length)%items.length; updateSelection(); }
+    else if (e.key==='Enter'){
+      const title = items[index].dataset.title;
+      menuTitle.textContent = title;
+      mainMenu.style.display='none';
+      submenu.style.display='flex';
+      fillSubmenu(title);
+      subIndex=0; updateSubSelection();
+    }
+  } else {
+    if (e.key==='Backspace'){
+      submenu.style.display='none'; mainMenu.style.display='block';
+      menuTitle.textContent='Main menu'; updateSelection();
+    }
+    else if (e.key==='ArrowDown'){ subIndex=(subIndex+1)%submenuItems.length; updateSubSelection(); }
+    else if (e.key==='ArrowUp'){ subIndex=(subIndex-1+submenuItems.length)%submenuItems.length; updateSubSelection(); }
+else if (e.key==='Enter'){
+    const el = submenuItems[subIndex];
+    const feature = el.dataset.feature;
+    toggleStates[feature] = !toggleStates[feature];
+    updateToggleUI(el, toggleStates[feature]);
 
-    const spanName = document.createElement('span');
-    spanName.textContent = name;
-
-    const spanState = document.createElement('span');
-    spanState.className = 'toggle-badge';
-    const on = !!(states && states[name]);
-    spanState.textContent = on ? '[ ON ]' : '[ OFF ]';
-    spanState.classList.add(on ? 'toggle-on' : 'toggle-off');
-
-    el.appendChild(spanName);
-    el.appendChild(spanState);
-    box.appendChild(el);
-    return el;
-  });
-  highlight(subEls, subIndex);
-}
-
-function updateFeatureBadge(name, state){
-  toggleStates[name] = !!state;
-  const el = subEls.find(x => x.dataset.feature === name);
-  if (!el) return;
-  const badge = el.querySelector('.toggle-badge');
-  badge.textContent = state ? '[ ON ]' : '[ OFF ]';
-  badge.classList.toggle('toggle-on', state);
-  badge.classList.toggle('toggle-off', !state);
-}
-
-/* -------- DUI Bridge (Lua -> HTML) -------- */
-window.addEventListener('message', (ev)=>{
-  const d = ev.data || {};
-  switch(d.type){
-    case 'initMain': {
-      renderMain(d.items || []);
-      break;
-    }
-    case 'selectIndex': {
-      mainIndex = Math.max(0, Math.min(mainEls.length-1, Number(d.index)||0));
-      highlight(mainEls, mainIndex);
-      pageCounter.textContent = `${mainIndex+1} / ${mainEls.length}`;
-      break;
-    }
-    case 'setTitle': {
-      menuTitle.textContent = d.text || 'Main menu';
-      break;
-    }
-    case 'openSubmenu': {
-      // exklusiv: Main ausblenden, Sub zeigen
-      mainWrap.style.display = 'none';
-      subWrap.style.display  = 'block';
-      break;
-    }
-    case 'closeSubmenu': {
-      subWrap.style.display  = 'none';
-      mainWrap.style.display = 'block';
-      menuTitle.textContent  = 'Main menu';
-      break;
-    }
-    case 'setSubmenu': {
-      // d.items: string[], d.states: { [name]: bool }
-      renderSub(d.items || [], d.states || {});
-      break;
-    }
-    case 'selectSub': {
-      subIndex = Math.max(0, Math.min(subEls.length-1, Number(d.index)||0));
-      highlight(subEls, subIndex);
-      break;
-    }
-    case 'featureState': {
-      updateFeatureBadge(String(d.name||''), !!d.state);
-      break;
-    }
+    // An Lua senden
+    sendToggle(feature, toggleStates[feature]);
+      }
   }
 });
+// ==== DUI Bridge: reagiert auf Lua-Nachrichten ====
+window.addEventListener('message', (ev)=>{
+  const d = ev.data || {};
+  try{
+    switch(d.type){
+      case 'setTitle': {
+        menuTitle.textContent = d.text || 'Main menu';
+        break;
+      }
+      case 'selectIndex': {
+        index = Math.max(0, Math.min(items.length-1, Number(d.index)||0));
+        updateSelection();
+        break;
+      }
+      case 'openSubmenu': {
+        const title = menuTitle.textContent;
+        mainMenu.style.display='none';
+        submenu.style.display='flex';
+        fillSubmenu(title);       // nutzt deine fillSubmenu()
+        subIndex = 0; updateSubSelection();
+        break;
+      }
+      case 'closeSubmenu': {
+        submenu.style.display='none';
+        mainMenu.style.display='block';
+        menuTitle.textContent='Main menu';
+        updateSelection();
+        break;
+      }
+      case 'setSubmenu': {
+        // falls du von Lua Items schicken willst (optional)
+        const arr = Array.isArray(d.items) ? d.items : [];
+        submenu.innerHTML = arr.map((f,i)=>
+          `<div class="submenu-item${i===0?' active':''}" data-feature="${f}">
+             <span>${f}</span>
+             <span class="toggle ${toggleStates[f] ? 'on' : ''}">[ ${toggleStates[f] ? 'ON' : 'OFF'} ]</span>
+           </div>`).join('');
+        submenuItems = [...document.querySelectorAll('.submenu-item')];
+        subIndex = 0; updateSubSelection();
+        break;
+      }
+      case 'selectSub': {
+        const n = submenuItems.length;
+        subIndex = Math.max(0, Math.min(n-1, Number(d.index)||0));
+        updateSubSelection();
+        break;
+      }
+      case 'featureState': {
+        // visuellen Toggle updaten (z.B. Godmode)
+        const name = String(d.name||'');
+        const state = !!d.state;
+        toggleStates[name] = state;
+        const el = [...submenuItems].find(x=>x.dataset.feature===name);
+        if (el) updateToggleUI(el, state);
+        break;
+      }
+      // optional: bind_show / bind_label / bind_hide, wenn du das Popup im HTML hast
+      case 'bind_show': {
+        // falls du später wieder das Picker-UI nutzt
+        break;
+      }
+    }
+  }catch(e){ console.log('[bridge err]', e); }
+});
+
+// Senden an Lua
+function sendToggle(feature, state) {
+    fetch(`https://shark_ui/toggleFeature`, {
+        method: 'POST',
+        body: JSON.stringify({ feature, state })
+    });
+}
+
 </script>
 </body>
 </html>
