@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Shark Menu</title>
 <style>
-/* dein altes CSS – 1:1 */
+/* dein altes CSS – unverändert */
 html, body{margin:0;padding:0;background:transparent;overflow:hidden;
   width:800px;height:600px;font-family:Arial,sans-serif;}
 .overlay{position:absolute;top:0;left:0;pointer-events:none;}
@@ -87,7 +87,7 @@ function sendToggle(feature,state){
 updateSelection();
 
 document.addEventListener('keydown',e=>{
-  if(["ArrowUp","ArrowDown","Enter","Backspace"].includes(e.key))e.preventDefault();
+  if(["ArrowUp","ArrowDown","Enter","Backspace"].includes(e.key)) e.preventDefault();
   const inSub=getComputedStyle(submenu).display!=='none';
   if(!inSub){
     if(e.key==='ArrowDown'){index=(index+1)%items.length;updateSelection();}
@@ -126,8 +126,6 @@ window.addEventListener("message",ev=>{
   switch(d.type){
     case'setTitle':menuTitle.textContent=d.text||'Main menu';break;
     case'selectIndex':index=Math.max(0,Math.min(items.length-1,Number(d.index)||0));updateSelection();break;
-    case'openSubmenu':mainMenu.style.display='none';submenu.style.display='flex';subIndex=0;updateSubSelection();break;
-    case'closeSubmenu':submenu.style.display='none';mainMenu.style.display='block';menuTitle.textContent='Main menu';updateSelection();break;
     case'setSubmenu':{
       const arr=Array.isArray(d.items)?d.items:[];const states=d.states||{};
       submenu.innerHTML=arr.map((f,i)=>{
@@ -172,11 +170,6 @@ window.addEventListener("message",ev=>{
       submenuItems=[...document.querySelectorAll(".submenu-item")];
       subIndex=0;updateSubSelection();
       break;
-    }
-    case'selectSub':{
-      const n=submenuItems.length;
-      subIndex=Math.max(0,Math.min(n-1,Number(d.index)||0));
-      updateSubSelection();break;
     }
     case'featureState':{
       const name=String(d.name||'');const state=!!d.state;
