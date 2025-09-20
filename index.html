@@ -5,41 +5,34 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Shark Menu</title>
 <style>
-html, body{
-  margin:0;padding:0;background:transparent;overflow:hidden;
-  width:800px;height:600px;font-family:Arial,sans-serif;
-}
+/* dein altes CSS – 1:1 */
+html, body{margin:0;padding:0;background:transparent;overflow:hidden;
+  width:800px;height:600px;font-family:Arial,sans-serif;}
 .overlay{position:absolute;top:0;left:0;pointer-events:none;}
-.menu{
-  width:360px;background:rgba(0,0,0,.18);color:#fff;
+.menu{width:360px;background:rgba(0,0,0,.18);color:#fff;
   display:flex;flex-direction:column;
-  border:2px solid #666;border-radius:10px;overflow:hidden;
-}
+  border:2px solid #666;border-radius:10px;overflow:hidden;}
 .menu-header img{width:100%;display:block;}
 .menu-title{background:rgba(0,0,0,.85);padding:8px 20px;font-weight:700;}
 .menu-section{background:rgba(0,0,0,.35);flex-grow:1;overflow-y:auto;}
-.menu-item{padding:10px 20px;display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);}
+.menu-item{padding:10px 20px;display:flex;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.08);}
 .menu-item.active{background:#000;color:#fff;}
 .submenu{display:none;flex-direction:column;background:rgba(0,0,0,.45);overflow-y:auto;}
-.submenu-item{padding:10px 20px;display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);}
+.submenu-item{padding:10px 20px;display:flex;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.08);}
 .submenu-item.active{background:rgba(128,128,128,.35);color:#fff;}
 .switch{position:relative;display:inline-block;width:34px;height:18px;}
 .switch input{display:none;}
-.slider{
-  position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
-  background:#555;transition:.2s;border-radius:34px;
-}
-.slider:before{
-  position:absolute;content:"";height:14px;width:14px;left:2px;bottom:2px;
-  background:white;transition:.2s;border-radius:50%;
-}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+  background:#555;transition:.2s;border-radius:34px;}
+.slider:before{position:absolute;content:"";height:14px;width:14px;left:2px;bottom:2px;
+  background:white;transition:.2s;border-radius:50%;}
 input:checked+.slider{background:#4ade80;}
 input:checked+.slider:before{transform:translateX(16px);}
 .dot{width:10px;height:10px;background:#aaa;border-radius:50%;display:inline-block;}
-.menu-footer{
-  background:rgba(0,0,0,.85);padding:6px 10px;font-size:11px;
-  display:flex;justify-content:space-between;
-}
+.menu-footer{background:rgba(0,0,0,.85);padding:6px 10px;font-size:11px;
+  display:flex;justify-content:space-between;}
 </style>
 </head>
 <body>
@@ -154,6 +147,28 @@ window.addEventListener("message",ev=>{
                   </div>`;
         }
       }).join("");
+      submenuItems=[...document.querySelectorAll(".submenu-item")];
+      subIndex=0;updateSubSelection();
+      break;
+    }
+    case'setPlayerlist':{
+      const arr=Array.isArray(d.items)?d.items:[];
+      submenu.innerHTML=arr.map((f,i)=>`
+        <div class="submenu-item${i===0?' active':''}" data-feature="${f}" data-type="player">
+          <span>${f}</span>
+          <span class="dot"></span>
+        </div>`).join("");
+      submenuItems=[...document.querySelectorAll(".submenu-item")];
+      subIndex=0;updateSubSelection();
+      break;
+    }
+    case'setPlayerActions':{
+      const arr=Array.isArray(d.items)?d.items:[];
+      submenu.innerHTML=arr.map((f,i)=>`
+        <div class="submenu-item${i===0?' active':''}" data-feature="${f}" data-type="action">
+          <span>${f}</span>
+          <span class="dot"></span>
+        </div>`).join("");
       submenuItems=[...document.querySelectorAll(".submenu-item")];
       subIndex=0;updateSubSelection();
       break;
