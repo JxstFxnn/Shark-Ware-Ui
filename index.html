@@ -5,16 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Shark Menu</title>
 <style>
-html, body{
-  margin:0;padding:0;background:transparent;overflow:hidden;
-  width:800px;height:600px;font-family:Arial,sans-serif;
-}
+html, body{margin:0;padding:0;background:transparent;overflow:hidden;width:800px;height:600px;font-family:Arial,sans-serif;}
 .overlay{position:absolute;top:0;left:0;pointer-events:none;}
-.menu{
-  width:360px;background:rgba(0,0,0,.18);color:#fff;
-  display:flex;flex-direction:column;
-  border:2px solid #666;border-radius:10px;overflow:hidden;
-}
+.menu{width:360px;background:rgba(0,0,0,.18);color:#fff;display:flex;flex-direction:column;border:2px solid #666;border-radius:10px;overflow:hidden;}
 .menu-header img{width:100%;display:block;}
 .menu-title{background:rgba(0,0,0,.85);padding:8px 20px;font-weight:700;}
 .menu-section{background:rgba(0,0,0,.35);flex-grow:1;overflow-y:auto;}
@@ -25,29 +18,18 @@ html, body{
 .submenu-item.active{background:rgba(128,128,128,.35);color:#fff;}
 .switch{position:relative;display:inline-block;width:34px;height:18px;}
 .switch input{display:none;}
-.slider{
-  position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
-  background:#555;transition:.2s;border-radius:34px;
-}
-.slider:before{
-  position:absolute;content:"";height:14px;width:14px;left:2px;bottom:2px;
-  background:white;transition:.2s;border-radius:50%;
-}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#555;transition:.2s;border-radius:34px;}
+.slider:before{position:absolute;content:"";height:14px;width:14px;left:2px;bottom:2px;background:white;transition:.2s;border-radius:50%;}
 input:checked+.slider{background:#4ade80;}
 input:checked+.slider:before{transform:translateX(16px);}
 .dot{width:10px;height:10px;background:#aaa;border-radius:50%;display:inline-block;}
-.menu-footer{
-  background:rgba(0,0,0,.85);padding:6px 10px;font-size:11px;
-  display:flex;justify-content:space-between;
-}
+.menu-footer{background:rgba(0,0,0,.85);padding:6px 10px;font-size:11px;display:flex;justify-content:space-between;}
 </style>
 </head>
 <body>
 <div class="overlay" id="menuRoot">
   <div class="menu">
-    <div class="menu-header">
-      <img src="https://cdn.discordapp.com/attachments/1366488328773439551/1403671888936435722/image.png">
-    </div>
+    <div class="menu-header"><img src="https://cdn.discordapp.com/attachments/1366488328773439551/1403426074573930546/image.png?ex=68cf89a2&is=68ce3822&hm=3623d62d6ce14b58cb41949540742dcda2ff3e1b92aa7b45286225937e654afa"></div>
     <div class="menu-title" id="menuTitle">Main menu</div>
     <div class="menu-section" id="mainMenu">
       <div class="menu-item" data-title="Self">Self <span>></span></div>
@@ -60,71 +42,42 @@ input:checked+.slider:before{transform:translateX(16px);}
       <div class="menu-item" data-title="Settings">Settings <span>></span></div>
     </div>
     <div class="menu-section submenu" id="submenu"></div>
-    <div class="menu-footer">
-      <div>Build: 1.2</div><div id="pageCounter">1 / 8</div>
-    </div>
+    <div class="menu-footer"><div>Build: 1.2</div><div id="pageCounter">1 / 8</div></div>
   </div>
+</div>
+<div id="bindPopup">
+  Press any key to bind the menu toggle<br>
+  <span id="bindKey"></span>
+  <small>Press ENTER to confirm</small>
 </div>
 
 <script>
-const toggleStates={};
-const items=[...document.querySelectorAll('.menu-item')];
-const submenu=document.getElementById('submenu');
-let submenuItems=[];
-const menuTitle=document.getElementById('menuTitle');
-const mainMenu=document.getElementById('mainMenu');
-const pageCounter=document.getElementById('pageCounter');
+const toggleStates={};const items=[...document.querySelectorAll('.menu-item')];
+const submenu=document.getElementById('submenu');let submenuItems=[];
+const menuTitle=document.getElementById('menuTitle');const mainMenu=document.getElementById('mainMenu');
+const pageCounter=document.getElementById('pageCounter');const bindPopup=document.getElementById("bindPopup");
+const bindKey=document.getElementById("bindKey");const menuRoot=document.getElementById("menuRoot");
 let index=0,subIndex=0;
 
-function updateSelection(){
-  items.forEach((el,i)=>el.classList.toggle('active',i===index));
-  pageCounter.textContent=`${index+1} / ${items.length}`;
-}
-function updateSubSelection(){
-  submenuItems.forEach((el,i)=>el.classList.toggle('active',i===subIndex));
-}
-function updateToggleUI(el,state){
-  const input=el.querySelector("input[type=checkbox]");
-  if(input)input.checked=state;
-  toggleStates[el.dataset.feature]=state;
-}
-function sendToggle(feature,state){
-  window.parent.postMessage({type:"toggleFeature",feature,state},"*");
-}
+function updateSelection(){items.forEach((el,i)=>el.classList.toggle('active',i===index));pageCounter.textContent=`${index+1} / ${items.length}`;}
+function updateSubSelection(){submenuItems.forEach((el,i)=>el.classList.toggle('active',i===subIndex));}
+function updateToggleUI(el,state){const input=el.querySelector("input[type=checkbox]");if(input)input.checked=state;toggleStates[el.dataset.feature]=state;}
+function sendToggle(feature,state){window.parent.postMessage({type:"toggleFeature",feature,state},"*");}
 updateSelection();
 
 document.addEventListener('keydown',e=>{
   if(["ArrowUp","ArrowDown","Enter","Backspace"].includes(e.key))e.preventDefault();
+  if(menuRoot.style.display==="none") return; // wenn Menü unsichtbar -> keine Navigation
   const inSub=getComputedStyle(submenu).display!=='none';
   if(!inSub){
     if(e.key==='ArrowDown'){index=(index+1)%items.length;updateSelection();}
     else if(e.key==='ArrowUp'){index=(index-1+items.length)%items.length;updateSelection();}
-    else if(e.key==='Enter'){
-      const title=items[index].dataset.title;
-      menuTitle.textContent=title;
-      mainMenu.style.display='none';
-      submenu.style.display='flex';
-      subIndex=0;updateSubSelection();
-    }
+    else if(e.key==='Enter'){const title=items[index].dataset.title;menuTitle.textContent=title;mainMenu.style.display='none';submenu.style.display='flex';subIndex=0;updateSubSelection();}
   } else {
-    if(e.key==='Backspace'){
-      submenu.style.display='none';mainMenu.style.display='block';
-      menuTitle.textContent='Main menu';updateSelection();
-    }
+    if(e.key==='Backspace'){submenu.style.display='none';mainMenu.style.display='block';menuTitle.textContent='Main menu';updateSelection();}
     else if(e.key==='ArrowDown'){subIndex=(subIndex+1)%submenuItems.length;updateSubSelection();}
     else if(e.key==='ArrowUp'){subIndex=(subIndex-1+submenuItems.length)%submenuItems.length;updateSubSelection();}
-    else if(e.key==='Enter'){
-      const el=submenuItems[subIndex];
-      const feature=el.dataset.feature;
-      const type=el.dataset.type;
-      if(type==="toggle"){
-        toggleStates[feature]=!toggleStates[feature];
-        updateToggleUI(el,toggleStates[feature]);
-        sendToggle(feature,toggleStates[feature]);
-      } else {
-        sendToggle(feature,true);
-      }
-    }
+    else if(e.key==='Enter'){const el=submenuItems[subIndex];const feature=el.dataset.feature;const type=el.dataset.type;if(type==="toggle"){toggleStates[feature]=!toggleStates[feature];updateToggleUI(el,toggleStates[feature]);sendToggle(feature,toggleStates[feature]);}else{sendToggle(feature,true);}}
   }
 });
 
@@ -135,41 +88,9 @@ window.addEventListener("message",ev=>{
     case'selectIndex':index=Math.max(0,Math.min(items.length-1,Number(d.index)||0));updateSelection();break;
     case'openSubmenu':mainMenu.style.display='none';submenu.style.display='flex';subIndex=0;updateSubSelection();break;
     case'closeSubmenu':submenu.style.display='none';mainMenu.style.display='block';menuTitle.textContent='Main menu';updateSelection();break;
-    case'setSubmenu':{
-      const arr=Array.isArray(d.items)?d.items:[];const states=d.states||{};
-      submenu.innerHTML=arr.map((f,i)=>{
-        if(states.hasOwnProperty(f)){
-          const state=!!states[f];toggleStates[f]=state;
-          return `<div class="submenu-item${i===0?' active':''}" data-feature="${f}" data-type="toggle">
-                    <span>${f}</span>
-                    <label class="switch">
-                      <input type="checkbox" ${state?'checked':''}>
-                      <span class="slider"></span>
-                    </label>
-                  </div>`;
-        } else {
-          return `<div class="submenu-item${i===0?' active':''}" data-feature="${f}" data-type="button">
-                    <span>${f}</span>
-                    <span class="dot"></span>
-                  </div>`;
-        }
-      }).join("");
-      submenuItems=[...document.querySelectorAll(".submenu-item")];
-      subIndex=0;updateSubSelection();
-      break;
-    }
-    case'selectSub':{
-      const n=submenuItems.length;
-      subIndex=Math.max(0,Math.min(n-1,Number(d.index)||0));
-      updateSubSelection();break;
-    }
-    case'featureState':{
-      const name=String(d.name||'');const state=!!d.state;
-      toggleStates[name]=state;
-      const el=[...submenuItems].find(x=>x.dataset.feature===name);
-      if(el)updateToggleUI(el,state);
-      break;
-    }
+    case'setSubmenu':{const arr=Array.isArray(d.items)?d.items:[];const states=d.states||{};submenu.innerHTML=arr.map((f,i)=>{if(states.hasOwnProperty(f)){const state=!!states[f];toggleStates[f]=state;return `<div class="submenu-item${i===0?' active':''}" data-feature="${f}" data-type="toggle"><span>${f}</span><label class="switch"><input type="checkbox" ${state?'checked':''}><span class="slider"></span></label></div>`;}else{return `<div class="submenu-item${i===0?' active':''}" data-feature="${f}" data-type="button"><span>${f}</span><span class="dot"></span></div>`;}}).join("");submenuItems=[...document.querySelectorAll(".submenu-item")];subIndex=0;updateSubSelection();break;}
+    case'selectSub':{const n=submenuItems.length;subIndex=Math.max(0,Math.min(n-1,Number(d.index)||0));updateSubSelection();break;}
+    case'featureState':{const name=String(d.name||'');const state=!!d.state;toggleStates[name]=state;const el=[...submenuItems].find(x=>x.dataset.feature===name);if(el)updateToggleUI(el,state);break;}
   }
 });
 </script>
