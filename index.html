@@ -103,8 +103,14 @@ window.addEventListener("message",(ev)=>{
       break;
     }
     case "openSubmenu":
-      mainMenu.style.display="none"; submenu.style.display="block";
-      subIndex=0; updateSubSelection(); break;
+      mainMenu.style.display="none";
+      submenu.style.display="block";
+      subIndex=0; updateSubSelection();
+      break;
+    case "closeSubmenu":
+      submenu.style.display="none";
+      mainMenu.style.display="block";
+      break;
     case "selectSub": subIndex=d.index||0; updateSubSelection(); break;
     case "featureState": {
       const name=d.name,state=d.state;
